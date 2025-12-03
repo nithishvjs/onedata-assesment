@@ -1,0 +1,44 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Clean Workspace') {
+            steps {
+                deleteDir()
+            }
+        }    
+        stage('Git Clone') {
+            steps {
+                sh 'git clone https://github.com/nithishvjs/onedata-assesment.git -b todo'
+            }
+        }
+        
+        stage('Docker Image') {
+            steps {
+                sh 'ls -l'
+                sh 'docker build -t nithi17/todo:jenkins onedata-assesment/'
+            }
+        }
+        
+        stage('Docker run') {
+            steps {
+                sh 'docker rm -f todo'  // Simplified
+                sh 'docker run -itd --name todo -p 5002:5000 nithi17/todo:jenkins'
+            }
+        }
+    }
+    
+    post {
+        success {
+            mail to: 'nithishakash17@gmail.com',
+                 subject: "Build Success: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                 body: "The build was successful. Check the details at: ${env.BUILD_URL}"
+        }
+        failure {
+            mail to: 'nithishakash17@gmail.com',
+                 subject: "Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                 body: "The build failed. Check the logs at: ${env.BUILD_URL}"
+        }
+    }
+}
+

@@ -1,0 +1,56 @@
+version: '3.8'
+
+volumes:
+  prometheus_data: {}
+  grafana_data: {}
+
+services:
+  # --- 1. Custom Application Service ---
+  app:
+    build: 
+      context: ./app
+      dockerfile: Dockerfile
+    image: custom-monitored-app:latest
+    container_name: monitored_app
+    # Expose port 5000 to the host for testing (e.g., curl http://localhost:5000)
+    ports:
+      - "5000:5000"
+    restart: always
+
+  # --- 2. Prometheus Service ---
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      # Mount the Prometheus configuration file
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      # Mount volume for persistent data storage
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.enable-lifecycle' # Allows reloading config via API
+    restart: always
+    # Ensure Prometheus starts only after the app is running
+    depends_on:
+      - app
+
+  # --- 3. Grafana Service ---
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount volume for persistent data
+      - grafana_data:/var/lib/grafana
+      # Mount provisioning files to auto-configure Prometheus data source
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+    environment:
+      # Set default admin credentials
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    restart: always
+    depends_on:
+      - prometheus

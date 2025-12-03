@@ -1,0 +1,15 @@
+docker build -t nithi17/todo-game:latest To-Do/
+
+docker push nithi17/todo-game:latest
+
+docker build -t nithi17/hello-world:latest Hello-world/
+
+docker push nithi17/hello-world:latest
+
+kubectl apply -f deployment.yaml
+
+kubectl apply -f service.yaml
+
+kubectl apply -f ingress.yaml
+
+kubectl port-forward svc/ingress-nginx-controller 80:80 -n ingress-nginx (for kind)
